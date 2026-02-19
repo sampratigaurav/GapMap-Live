@@ -14,6 +14,7 @@ interface Roadmap {
     current_skills: string;
     match_percentage: number;
     missing_skills: string[];
+    verified_skills?: string[];
     created_at: string;
 }
 
@@ -98,106 +99,102 @@ export default function RecruiterPage() {
                     </form>
                 </div>
 
-                {/* Results Grid */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {candidates.map((candidate, index) => (
-                        <motion.div
-                            key={candidate.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="group relative flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-xl transition-all hover:border-indigo-500/50 hover:shadow-indigo-500/10"
-                        >
-                            <div className="space-y-4">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center space-x-2">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-400">
-                                                <User className="h-5 w-5" />
+                {/* Candidates List */}
+                <div className="space-y-6">
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"></div>
+                            <p className="mt-4 text-slate-400">Scanning talent database...</p>
+                        </div>
+                    ) : candidates.length > 0 ? (
+                        candidates.map((candidate) => (
+                            <motion.div
+                                key={candidate.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="group rounded-2xl border border-slate-800 bg-slate-900/50 p-6 transition-all hover:border-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/5"
+                            >
+                                <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                                    {/* Candidate Info */}
+                                    <div className="flex gap-4">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-800 text-slate-400">
+                                            <User className="h-6 w-6" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-semibold text-white">Anonymous Candidate</h3>
+                                                <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-400">
+                                                    {candidate.match_percentage}% Match
+                                                </span>
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold text-lg text-white">Anonymous Candidate</h3>
-                                                <p className="text-xs text-slate-500">ID: #{candidate.id.toString().padStart(4, '0')}</p>
+                                            <div className="flex items-center gap-2 text-sm text-slate-400">
+                                                <Briefcase className="h-4 w-4" />
+                                                <span>Targeting: {candidate.target_role}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-slate-400">
+                                                <MapPin className="h-4 w-4" />
+                                                <span>Remote / Hybrid</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className={cn(
-                                        "flex items-center space-x-1 rounded-full px-2 py-1 text-xs font-bold",
-                                        candidate.match_percentage >= 75 ? "bg-emerald-500/10 text-emerald-500" : "bg-yellow-500/10 text-yellow-500"
-                                    )}>
-                                        {candidate.match_percentage >= 75 ? <CheckCircle className="h-3 w-3 mr-1" /> : null}
-                                        <span>{candidate.match_percentage}% Match</span>
-                                    </div>
-                                </div>
+                                    {/* Skills & Action */}
+                                    <div className="flex flex-col gap-4 md:items-end">
+                                        <div className="flex flex-wrap gap-2 md:justify-end">
+                                            {candidate.current_skills.split(',').slice(0, 4).map((skill, i) => {
+                                                const skillName = skill.trim();
+                                                const isVerified = candidate.verified_skills?.includes(skillName);
 
-                                <div>
-                                    <div className="flex items-center text-sm text-indigo-400 font-medium mt-1">
-                                        <Briefcase className="mr-1.5 h-3.5 w-3.5" />
-                                        {candidate.target_role}
-                                    </div>
-                                </div>
+                                                return (
+                                                    <span
+                                                        key={i}
+                                                        className={cn(
+                                                            "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium border",
+                                                            isVerified
+                                                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                                                : "bg-slate-800 text-slate-300 border-slate-700"
+                                                        )}
+                                                    >
+                                                        {skillName}
+                                                        {isVerified && <CheckCircle className="h-3 w-3" />}
+                                                    </span>
+                                                );
+                                            })}
+                                            {candidate.current_skills.split(',').length > 4 && (
+                                                <span className="rounded-md bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-400">
+                                                    +{candidate.current_skills.split(',').length - 4} more
+                                                </span>
+                                            )}
+                                        </div>
 
-                                {/* Skills Mapping */}
-                                <div>
-                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-semibold">Current Skills</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {candidate.current_skills.split(',').slice(0, 5).map((skill, i) => (
-                                            <span
-                                                key={i}
-                                                className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-300"
-                                            >
-                                                {skill.trim()}
-                                            </span>
-                                        ))}
-                                        {candidate.current_skills.split(',').length > 5 && (
-                                            <span className="rounded-md px-2 py-1 text-xs font-medium text-slate-500">
-                                                +{candidate.current_skills.split(',').length - 5} more
-                                            </span>
-                                        )}
+                                        <button
+                                            onClick={() => handleRequest(candidate.id)}
+                                            disabled={requestedCandidates.includes(candidate.id)}
+                                            className="flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {requestedCandidates.includes(candidate.id) ? (
+                                                <>
+                                                    <CheckCircle className="h-4 w-4" />
+                                                    Request Sent
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Request Introduction
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </>
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
+                            </motion.div>
+                        ))
+                    ) : (
+                        <div className="text-center py-20 rounded-2xl border border-dashed border-slate-800">
+                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-800/50 mb-4">
+                                <Search className="h-6 w-6 text-slate-500" />
                             </div>
-
-                            {/* Action */}
-                            <div className="mt-6 pt-4 border-t border-slate-800">
-                                <button
-                                    onClick={() => handleRequest(candidate.id)}
-                                    disabled={requestedCandidates.includes(candidate.id)}
-                                    className={cn(
-                                        "flex w-full items-center justify-center rounded-lg py-2.5 text-sm font-medium transition-all",
-                                        requestedCandidates.includes(candidate.id)
-                                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default"
-                                            : "bg-indigo-600 text-white hover:bg-indigo-500"
-                                    )}
-                                >
-                                    {requestedCandidates.includes(candidate.id) ? (
-                                        <>
-                                            <CheckCircle className="mr-2 h-4 w-4" />
-                                            Request Sent
-                                        </>
-                                    ) : (
-                                        <>
-                                            Request Introduction <ChevronRight className="ml-2 h-4 w-4" />
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </motion.div>
-                    ))}
-
-                    {candidates.length === 0 && !loading && (
-                        <div className="col-span-full py-20 text-center text-slate-500 border-2 border-dashed border-slate-800 rounded-xl">
-                            <Search className="h-10 w-10 mx-auto mb-4 opacity-20" />
-                            <p className="text-lg">No candidates found for "{searchQuery}".</p>
-                            <p className="text-sm">Try searching for a different role or skill.</p>
-                        </div>
-                    )}
-
-                    {loading && (
-                        <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-500">
-                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mb-4"></div>
-                            <p>Searching database...</p>
+                            <h3 className="text-lg font-medium text-white">No candidates found</h3>
+                            <p className="text-slate-400">Try adjusting your search terms.</p>
                         </div>
                     )}
                 </div>
