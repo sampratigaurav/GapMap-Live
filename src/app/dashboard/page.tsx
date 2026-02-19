@@ -113,7 +113,7 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-slate-950 text-white p-4 md:p-8">
+        <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 pt-24">
             <div className="mx-auto max-w-7xl space-y-12">
 
                 {/* Header */}

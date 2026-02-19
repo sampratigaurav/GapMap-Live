@@ -159,7 +159,7 @@ export default function VerifyPage() {
     if (loading) return null;
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-slate-950 text-white px-4 py-8 md:px-8">
+        <div className="min-h-screen bg-slate-950 text-white px-4 py-8 md:px-8 pt-24">
             <div className="mx-auto max-w-6xl space-y-8">
 
                 {/* Header */}

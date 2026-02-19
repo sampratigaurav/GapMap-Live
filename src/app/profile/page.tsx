@@ -37,7 +37,7 @@ export default function ProfilePage() {
     if (loading) return null;
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-slate-950 text-white px-4 py-8 md:px-8 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-950 text-white px-4 py-8 md:px-8 pt-24 flex items-center justify-center">
             <div className="w-full max-w-2xl space-y-8">
                 <div className="space-y-2 text-center">
                     <h1 className="text-3xl font-bold tracking-tight text-white">Your Profile</h1>
