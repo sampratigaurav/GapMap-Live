@@ -42,6 +42,10 @@ export default function VerifyPage() {
                 router.push("/login");
                 return;
             }
+            if (user.user_metadata?.role === 'Enterprise') {
+                router.push("/recruiter");
+                return;
+            }
             setUser(user);
             fetchClaimedSkills(user.id);
         };

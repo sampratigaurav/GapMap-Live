@@ -38,15 +38,17 @@ export default function DashboardPage() {
     const [targetRole, setTargetRole] = useState("Cyber Security Analyst");
     const [loading, setLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-
+    // Effect to check user authentication on component mount
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                router.push("/login");
+                router.push("/login"); // Redirect to login if no user
+            } else if (user.user_metadata?.role === 'Enterprise') {
+                router.push("/recruiter");
             } else {
                 setUser(user);
-                fetchRoadmaps(user.id);
+                fetchRoadmaps(user.id); // Fetch existing roadmaps for the user
             }
         };
         checkUser();

@@ -30,6 +30,8 @@ export default function RecruiterPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 router.push("/login");
+            } else if (user.user_metadata?.role !== 'Enterprise') {
+                router.push("/dashboard");
             } else {
                 fetchCandidates("Cyber Security"); // Initial fetch
             }
