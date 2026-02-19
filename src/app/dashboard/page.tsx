@@ -38,6 +38,17 @@ export default function DashboardPage() {
     const [targetRole, setTargetRole] = useState("Cyber Security Analyst");
     const [loading, setLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+
+    // Context State
+    const [resumeFile, setResumeFile] = useState<File | null>(null);
+    const [linkedinUrl, setLinkedinUrl] = useState("");
+    const [githubUrl, setGithubUrl] = useState("");
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setResumeFile(e.target.files[0]);
+        }
+    };
     // Effect to check user authentication on component mount
     useEffect(() => {
         const checkUser = async () => {
@@ -74,10 +85,28 @@ export default function DashboardPage() {
         setAnalysisResult(null);
 
         try {
+            let resumeContent = null;
+            let resumeType = null;
+            if (resumeFile) {
+                resumeType = resumeFile.type;
+                const reader = new FileReader();
+                resumeContent = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target?.result?.toString().split(',')[1]); // Get base64 content
+                    reader.readAsDataURL(resumeFile);
+                });
+            }
+
             const response = await fetch("/api/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ currentSkills, targetRole }),
+                body: JSON.stringify({
+                    currentSkills,
+                    targetRole,
+                    resumeContent,
+                    resumeType,
+                    linkedinUrl,
+                    githubUrl
+                }),
             });
 
             const data = await response.json();
@@ -91,7 +120,9 @@ export default function DashboardPage() {
                     current_skills: currentSkills,
                     match_percentage: data.matchPercentage,
                     missing_skills: data.missingSkills,
-                    actionable_steps: data.actionableRoadmap
+                    actionable_steps: data.actionableRoadmap,
+                    linkedin_url: linkedinUrl,
+                    github_url: githubUrl
                 });
 
                 if (error) {
@@ -143,6 +174,61 @@ export default function DashboardPage() {
                                     onChange={(e) => setTargetRole(e.target.value)}
                                     className="w-full rounded-md border border-slate-700 bg-slate-950 px-4 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
                                 />
+                            </div>
+
+                            {/* Profile Context */}
+                            <div className="space-y-4 pt-4 border-t border-slate-800">
+                                <h3 className="text-sm font-medium text-indigo-400 uppercase tracking-wider">Profile Context</h3>
+
+                                {/* Resume Upload */}
+                                <div className="space-y-2">
+                                    <label className="text-sm text-slate-400">Resume / CV (PDF or Image)</label>
+                                    <div className="relative flex items-center justify-center w-full">
+                                        <label htmlFor="dropzone-file" className={cn(
+                                            "flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+                                            resumeFile ? "border-emerald-500/50 bg-emerald-500/5" : "border-slate-700 bg-slate-900 hover:bg-slate-800"
+                                        )}>
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                {resumeFile ? (
+                                                    <>
+                                                        <CheckCircle className="w-8 h-8 mb-2 text-emerald-500" />
+                                                        <p className="text-sm text-emerald-400 font-medium">{resumeFile.name}</p>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Upload className="w-8 h-8 mb-2 text-slate-400" />
+                                                        <p className="text-sm text-slate-400">Click to upload resume</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <input id="dropzone-file" type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.png,.jpg,.jpeg" />
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Social Links */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs text-slate-400">LinkedIn URL</label>
+                                        <input
+                                            type="text"
+                                            value={linkedinUrl}
+                                            onChange={(e) => setLinkedinUrl(e.target.value)}
+                                            placeholder="linkedin.com/in/..."
+                                            className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs text-slate-400">GitHub URL</label>
+                                        <input
+                                            type="text"
+                                            value={githubUrl}
+                                            onChange={(e) => setGithubUrl(e.target.value)}
+                                            placeholder="github.com/..."
+                                            className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-2">

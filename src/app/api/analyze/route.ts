@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
     try {
-        const { currentSkills, targetRole } = await req.json();
+        const { currentSkills, targetRole, resumeContent, resumeType, linkedinUrl, githubUrl } = await req.json();
 
         if (!currentSkills || !targetRole) {
             return NextResponse.json(
@@ -17,8 +17,6 @@ export async function POST(req: Request) {
 
         if (!apiKey) {
             console.error("GEMINI_API_KEY is not set");
-            // For development/demo purposes without a key, we might want to return a mock response
-            // or error out. Given the strict instructions, I'll error out but with a helpful message log.
             return NextResponse.json(
                 { error: "Server configuration error: API Key missing" },
                 { status: 500 }
@@ -28,12 +26,18 @@ export async function POST(req: Request) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const prompt = `
-      Act as an expert technical career coach.
-      Analyze the gap between a candidate's current skills and their target role.
+        let prompt = `
+      Act as an elite technical recruiter.
+      Analyze the candidate's fit for the [${targetRole}] role.
       
-      Current Skills: ${currentSkills}
-      Target Role: ${targetRole}
+      Claimed Skills: ${currentSkills}
+      Professional Profiles:
+      - LinkedIn: ${linkedinUrl || "Not provided"}
+      - GitHub: ${githubUrl || "Not provided"}
+
+      ${resumeContent ? `RESUME CONTENT (Base64 Encoded): [Attached]` : "No resume provided."}
+
+      Task: Determine the candidate's actual skill level by cross-referencing these sources.
       
       Output a strict JSON response with the following structure:
       {
@@ -44,7 +48,18 @@ export async function POST(req: Request) {
       Do not include any markdown formatting or extra text, just the JSON string.
     `;
 
-        const result = await model.generateContent(prompt);
+        const parts: any[] = [{ text: prompt }];
+
+        if (resumeContent) {
+            parts.push({
+                inlineData: {
+                    mimeType: resumeType || "application/pdf",
+                    data: resumeContent
+                }
+            });
+        }
+
+        const result = await model.generateContent(parts);
         const response = await result.response;
         const text = response.text();
 
