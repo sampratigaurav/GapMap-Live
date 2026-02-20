@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Briefcase, Calculator, CheckCircle, DollarSign, TrendingUp, Users, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 interface AnalysisResult {
     recommendation: "Internal Upskill" | "External Hire";
@@ -56,6 +57,12 @@ export default function FeasibilityPage() {
             }
 
             const data = await res.json();
+
+            // Check for logic error returned as 200 (as requested)
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
             setResult(data);
         } catch (err: any) {
             console.error("Analysis Error:", err);
@@ -140,10 +147,17 @@ export default function FeasibilityPage() {
                     {/* Results Area */}
                     <div className="md:col-span-2 space-y-6">
                         {error && (
-                            <div className="rounded-xl border border-red-500/50 bg-red-900/20 p-4 text-red-200 flex items-start gap-3">
+                            <div className={cn(
+                                "rounded-xl border p-4 flex items-start gap-3",
+                                error.includes("add employees")
+                                    ? "bg-amber-900/20 border-amber-500/50 text-amber-200"
+                                    : "bg-red-900/20 border-red-500/50 text-red-200"
+                            )}>
                                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="font-semibold">Analysis Failed</p>
+                                    <p className="font-semibold">
+                                        {error.includes("add employees") ? "Action Required" : "Analysis Failed"}
+                                    </p>
                                     <p className="text-sm opacity-90">{error}</p>
                                 </div>
                             </div>
@@ -281,6 +295,75 @@ export default function FeasibilityPage() {
                         )}
                     </div>
                 </div>
+            </div>
+
+            {/* Talent Pool Table */}
+            <EmployeeTable />
+        </div>
+    );
+}
+
+function EmployeeTable() {
+    const [employees, setEmployees] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+
+    // removed invalid import
+    // Note: In a real file, imports should be at the top. 
+    // I will assume supabase import exists or add it. 
+    // Actually, let's just use a simple fetch or passed prop if possible.
+    // For this snippet, I'll add the useEffect logic.
+
+    // To avoid import errors in this chunk replacement, I'll assume `supabase` is imported at top of file. 
+    // If not, I'd need to add it. Let's check the file content first? 
+    // The previous file content didn't show `supabase` imported in `recruiter/feasibility/page.tsx`.
+    // I should add the import in a separate step or just assume global fetch.
+    // Let's use a standard fetch to a new endpoint or just client-side supabase if available.
+    // I'll assume we need to fetch this data. 
+    // Let's use a client-side supabase call.
+
+    // WAIT: I cannot add imports inside a function. 
+    // I will add the component structure here and then add the import at the top in a separate step.
+
+    useEffect(() => {
+        const fetchEmployees = async () => {
+            const { data } = await supabase.from('employees').select('*').limit(50);
+            setEmployees(data || []);
+            setLoading(false);
+        };
+        fetchEmployees();
+    }, []);
+
+    if (loading) return null;
+    if (employees.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Users className="h-5 w-5 text-slate-400" />
+                Your Current Talent Pool ({employees.length})
+            </h3>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-400">
+                    <thead className="border-b border-slate-800 text-xs uppercase font-medium text-slate-500">
+                        <tr>
+                            <th className="px-4 py-3">Name</th>
+                            <th className="px-4 py-3">Designation</th>
+                            <th className="px-4 py-3">Skills</th>
+                            <th className="px-4 py-3">Salary</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                        {employees.map((emp) => (
+                            <tr key={emp.id} className="hover:bg-slate-800/30 transition-colors">
+                                <td className="px-4 py-3 font-medium text-white">{emp.name}</td>
+                                <td className="px-4 py-3">{emp.designation}</td>
+                                <td className="px-4 py-3 max-w-xs truncate" title={emp.skills}>{emp.skills}</td>
+                                <td className="px-4 py-3">${emp.salary?.toLocaleString()}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
