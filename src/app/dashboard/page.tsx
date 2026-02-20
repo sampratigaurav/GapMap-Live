@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Upload, FileText, CheckCircle, ChevronRight, BarChart3, Clock, AlertCircle, AlertTriangle, Sparkles } from "lucide-react";
+import { Upload, FileText, CheckCircle, ChevronRight, BarChart3, Clock, AlertCircle, AlertTriangle, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -24,8 +24,8 @@ interface Roadmap {
     target_role: string;
     current_skills: string;
     match_percentage: number;
-    missing_skills: string[];
-    actionable_steps: RoadmapStep[];
+    missing_skills: string[] | string; // Handle potential JSON string
+    actionable_steps: RoadmapStep[] | string; // Handle potential JSON string
     created_at: string;
 }
 
@@ -33,6 +33,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
     const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
+    const [selectedRoadmap, setSelectedRoadmap] = useState<Roadmap | null>(null);
 
     const [currentSkills, setCurrentSkills] = useState("");
     const [targetRole, setTargetRole] = useState("Cyber Security Analyst");
@@ -52,6 +53,20 @@ export default function DashboardPage() {
         }
     };
     // Effect to check user authentication on component mount
+    const fetchRoadmaps = async (userId: string) => {
+        const { data, error } = await supabase
+            .from('roadmaps')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Error fetching roadmaps:", error);
+        } else {
+            setRoadmaps(data || []);
+        }
+    };
+
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -84,19 +99,7 @@ export default function DashboardPage() {
         return null; // Render nothing while checking role to prevent ghosting
     }
 
-    const fetchRoadmaps = async (userId: string) => {
-        const { data, error } = await supabase
-            .from('roadmaps')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
 
-        if (error) {
-            console.error("Error fetching roadmaps:", error);
-        } else {
-            setRoadmaps(data || []);
-        }
-    };
 
     const analyzeSkills = async () => {
         if (!currentSkills || !targetRole || !user) return;
@@ -397,7 +400,10 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
-                                <button className="flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-800/50 py-2.5 text-sm font-medium text-white transition-all hover:bg-slate-800 hover:text-white">
+                                <button
+                                    onClick={() => setSelectedRoadmap(map)}
+                                    className="flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-800/50 py-2.5 text-sm font-medium text-white transition-all hover:bg-slate-800 hover:text-white"
+                                >
                                     View Roadmap <ChevronRight className="ml-2 h-4 w-4" />
                                 </button>
                             </motion.div>
@@ -411,6 +417,126 @@ export default function DashboardPage() {
                     </div>
                 </section>
             </div>
-        </div>
+
+
+            {/* Roadmap Viewer Modal */}
+            {
+                selectedRoadmap && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10"
+                        >
+                            {/* Modal Header */}
+                            <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-slate-950/95 border-b border-slate-800 backdrop-blur-md">
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">{selectedRoadmap.target_role}</h2>
+                                    <p className="text-sm text-slate-400">Roadmap Details</p>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedRoadmap(null)}
+                                    className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-8">
+                                {/* Match Score */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-400 font-medium">Current Match Score</span>
+                                        <span className={cn(
+                                            "font-bold",
+                                            selectedRoadmap.match_percentage >= 70 ? "text-emerald-400" :
+                                                selectedRoadmap.match_percentage >= 40 ? "text-yellow-400" : "text-red-400"
+                                        )}>{selectedRoadmap.match_percentage}%</span>
+                                    </div>
+                                    <div className="h-3 w-full rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                                        <div
+                                            className={cn(
+                                                "h-full rounded-full transition-all duration-1000",
+                                                selectedRoadmap.match_percentage >= 70 ? "bg-emerald-500" :
+                                                    selectedRoadmap.match_percentage >= 40 ? "bg-yellow-500" : "bg-red-500"
+                                            )}
+                                            style={{ width: `${selectedRoadmap.match_percentage}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Missing Skills */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">Skill Gaps Identified</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(() => {
+                                            try {
+                                                const skills = typeof selectedRoadmap.missing_skills === 'string'
+                                                    ? JSON.parse(selectedRoadmap.missing_skills)
+                                                    : selectedRoadmap.missing_skills;
+
+                                                if (!Array.isArray(skills) || skills.length === 0) {
+                                                    return (
+                                                        <span className="text-sm text-emerald-400 flex items-center">
+                                                            <CheckCircle className="mr-2 h-4 w-4" /> No critical gaps found!
+                                                        </span>
+                                                    );
+                                                }
+
+                                                return skills.map((skill: string, idx: number) => (
+                                                    <span key={idx} className="flex items-center rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5 text-sm text-red-400">
+                                                        <AlertTriangle className="mr-1.5 h-3.5 w-3.5" />
+                                                        {skill}
+                                                    </span>
+                                                ));
+                                            } catch (e) {
+                                                return <span className="text-sm text-red-500">Error parsing skills data.</span>;
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* Actionable Steps */}
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">Your Action Plan</h3>
+                                    <div className="relative space-y-6 pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+                                        {(() => {
+                                            try {
+                                                const steps = typeof selectedRoadmap.actionable_steps === 'string'
+                                                    ? JSON.parse(selectedRoadmap.actionable_steps)
+                                                    : selectedRoadmap.actionable_steps;
+
+                                                return Array.isArray(steps) && steps.map((step: any, idx: number) => (
+                                                    <div key={idx} className="relative group">
+                                                        <div className="absolute -left-[25px] top-1.5 h-4 w-4 rounded-full bg-slate-900 border-2 border-indigo-500 group-hover:bg-indigo-500 transition-colors" />
+                                                        <h4 className="font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                                                            {step.stepName || step.step}
+                                                        </h4>
+                                                        <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+                                                            {step.description || step.desc}
+                                                        </p>
+                                                    </div>
+                                                ));
+                                            } catch (e) {
+                                                return <span className="text-sm text-red-500">Error parsing roadmap steps.</span>;
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-slate-800 flex justify-end">
+                                    <button
+                                        onClick={() => setSelectedRoadmap(null)}
+                                        className="px-6 py-2 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition-colors font-medium"
+                                    >
+                                        Close Roadmap
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )
+            }
+        </div >
     );
 }

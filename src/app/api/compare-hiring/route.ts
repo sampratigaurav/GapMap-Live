@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
             **Job Description**:
             ${jobDescription}
 
-            **Internal Talent Pool (Employees)**:
+            **Internal Talent Pool (Employees - Top 3 Pre-filtered by Skill Match)**:
             ${internalDataStr}
 
             **External Talent Pool (Candidates)**:
@@ -108,13 +108,13 @@ export async function POST(req: NextRequest) {
         const responseText = await result.response.text();
 
         // Clean JSON
-        const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const analysis = JSON.parse(cleanJson);
+        const cleanText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const analysis = JSON.parse(cleanText);
 
         return NextResponse.json(analysis);
 
     } catch (error: any) {
-        console.error("API Error:", error);
-        return NextResponse.json({ error: "Analysis failed", details: error.message }, { status: 500 });
+        console.error("🔥 BACKEND AI ERROR:", error);
+        return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 });
     }
 }

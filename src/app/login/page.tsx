@@ -60,11 +60,7 @@ function LoginForm() {
                 if (error) throw error;
 
                 // Successful login
-                if (role === "candidate") {
-                    router.push("/dashboard");
-                } else {
-                    router.push("/recruiter");
-                }
+                router.push("/");
             }
         } catch (err: any) {
             setError(err.message);

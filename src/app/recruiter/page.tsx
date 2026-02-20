@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, MapPin, Award, CheckCircle, Briefcase, ChevronRight, User } from "lucide-react";
+import { Search, MapPin, Award, CheckCircle, Briefcase, ChevronRight, User, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -91,13 +92,25 @@ export default function RecruiterPage() {
             <div className="mx-auto max-w-6xl space-y-8">
 
                 {/* Header & Search */}
+                {/* Header & Search */}
                 <div className="space-y-4">
-                    <h1 className="text-3xl font-bold tracking-tight text-white">
-                        Talent Discovery Engine
-                    </h1>
-                    <p className="text-slate-400">
-                        Find verified candidates actively upskilling for your open roles.
-                    </p>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-white">
+                                Talent Discovery Engine
+                            </h1>
+                            <p className="text-slate-400 mt-1">
+                                Find verified candidates actively upskilling for your open roles.
+                            </p>
+                        </div>
+                        <Link
+                            href="/recruiter/feasibility"
+                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-md transition-all flex items-center gap-2 group shrink-0"
+                        >
+                            <Calculator className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                            Hiring Feasibility Engine
+                        </Link>
+                    </div>
 
                     {/* Error Debugger */}
                     {lastError && (
