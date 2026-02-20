@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 
 // Initialize Gemini with Flash 1.5 for speed and lower cost/token usage
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function POST(req: NextRequest) {
     try {
