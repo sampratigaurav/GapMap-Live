@@ -17,10 +17,13 @@ export default function Home() {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        console.log("LANDING PAGE CHECK: User Role", user.user_metadata?.role);
+
         // User exists: Redirect immediately and keep loading=true to prevent flash
         if (user.user_metadata?.role === 'Enterprise') {
           router.replace('/recruiter');
         } else {
+          // Defaults to dashboard for Candidates or users with no specific role
           router.replace('/dashboard');
         }
       } else {

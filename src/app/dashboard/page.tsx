@@ -39,6 +39,8 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
+
     // Context State
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -53,17 +55,34 @@ export default function DashboardPage() {
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
+
+            console.log("DASHBOARD AUTH CHECK: Full User Object", user);
+            console.log("DASHBOARD AUTH CHECK: User Role", user?.user_metadata?.role);
+
             if (!user) {
-                router.push("/login"); // Redirect to login if no user
-            } else if (user.user_metadata?.role === 'Enterprise') {
-                router.push("/recruiter");
-            } else {
-                setUser(user);
-                fetchRoadmaps(user.id); // Fetch existing roadmaps for the user
+                router.replace("/login");
+                return;
             }
+
+            // High Priority Check: If Enterprise, kick them out immediately
+            // We use '==' to be safe, but checks strictly for the string 'Enterprise'
+            if (user.user_metadata?.role === 'Enterprise') {
+                console.log("🚨 ENTERPRISE USER DETECTED IN DASHBOARD -> REDIRECTING TO RECRUITER");
+                router.replace("/recruiter");
+                return; // Crucial: Do NOT setIsAuthChecking(false)
+            }
+
+            // If we are here, we are a Candidate (or generic user)
+            setUser(user);
+            fetchRoadmaps(user.id);
+            setIsAuthChecking(false); // Only now allow UI to render
         };
         checkUser();
     }, [router]);
+
+    if (isAuthChecking) {
+        return null; // Render nothing while checking role to prevent ghosting
+    }
 
     const fetchRoadmaps = async (userId: string) => {
         const { data, error } = await supabase

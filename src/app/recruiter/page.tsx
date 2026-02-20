@@ -24,31 +24,49 @@ export default function RecruiterPage() {
     const [candidates, setCandidates] = useState<Roadmap[]>([]);
     const [loading, setLoading] = useState(false);
     const [requestedCandidates, setRequestedCandidates] = useState<number[]>([]);
+    const [lastError, setLastError] = useState<any>(null);
 
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
+
             if (!user) {
-                router.push("/login");
-            } else if (user.user_metadata?.role !== 'Enterprise') {
-                router.push("/dashboard");
-            } else {
-                fetchCandidates("Cyber Security"); // Initial fetch
+                router.replace("/login");
+                return;
+            }
+
+            // Strict Check: Only redirect if explicitly Candidate
+            if (user.user_metadata?.role === 'Candidate') {
+                router.replace("/dashboard");
+                return;
+            }
+
+            // If Enterprise (or admin/other), stay here
+            if (user.user_metadata?.role === 'Enterprise') {
+                fetchCandidates(); // Initial fetch: Show all raw
             }
         };
         checkUser();
     }, [router]);
 
-    const fetchCandidates = async (query: string) => {
+    const fetchCandidates = async (query?: string) => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('roadmaps')
-            .select('*')
-            .ilike('target_role', `%${query}%`)
-            .order('match_percentage', { ascending: false });
+        setLastError(null);
+
+        // Debugging User Role Context
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log("Recruiter Fetch - User Role:", user?.user_metadata?.role);
+
+        // Global Fetch: Select Everything (No filters)
+        // Ensure NO .eq('user_id', ...) is present
+        const { data, error } = await supabase.from('roadmaps').select('*');
+
+        console.log("Supabase Raw Response:", { data, error });
+        console.log("Recruiter Fetch - Data Length:", data?.length);
 
         if (error) {
             console.error("Error fetching candidates:", error);
+            setLastError(error);
         } else {
             setCandidates(data || []);
         }
@@ -80,6 +98,16 @@ export default function RecruiterPage() {
                     <p className="text-slate-400">
                         Find verified candidates actively upskilling for your open roles.
                     </p>
+
+                    {/* Error Debugger */}
+                    {lastError && (
+                        <div className="p-4 rounded-lg bg-red-900/50 border border-red-500 text-red-200">
+                            <strong>Supabase Error:</strong>
+                            <pre className="mt-2 text-xs overflow-auto">
+                                {JSON.stringify(lastError, null, 2)}
+                            </pre>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSearch} className="relative max-w-2xl flex gap-2">
                         <div className="relative flex-1">
