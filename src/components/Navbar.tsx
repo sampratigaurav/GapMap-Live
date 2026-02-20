@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { Menu, X, ChevronRight, BarChart3, Users, LayoutDashboard, LogOut, CheckCircle, BrainCircuit, User, Database, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
-import { BrainCircuit, Menu, X, LogOut, User, LayoutDashboard, Database, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -66,7 +67,8 @@ export function Navbar() {
                     <div className="hidden md:block">
                         <div className="ml-10 flex items-baseline space-x-4">
                             {user ? (
-                                <>
+                                <div className="flex items-center space-x-4">
+                                    <ThemeToggle />
                                     {routes.map((route) => (
                                         <Link
                                             key={route.href}
@@ -101,9 +103,10 @@ export function Navbar() {
                                         <LogOut className="mr-2 h-4 w-4" />
                                         Sign Out
                                     </button>
-                                </>
+                                </div>
                             ) : (
                                 <div className="flex items-center space-x-4">
+                                    <ThemeToggle />
                                     <Link
                                         href="/login"
                                         className="text-sm font-medium text-slate-300 hover:text-white transition-colors"

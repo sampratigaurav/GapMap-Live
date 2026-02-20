@@ -40,6 +40,10 @@ export default function FeasibilityPage() {
 
     const handleAnalyze = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Anti-Spam Guard
+        if (loading) return;
+
         setLoading(true);
         setError(null);
         setResult(null);
@@ -131,7 +135,7 @@ export default function FeasibilityPage() {
                                     {loading ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            Analyzing Market...
+                                            Analyzing (Please wait...)
                                         </>
                                     ) : (
                                         <>

@@ -1,15 +1,24 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Upload, FileText, CheckCircle, ChevronRight, BarChart3, Clock, AlertCircle, AlertTriangle, Sparkles, X } from "lucide-react";
+import { Upload, FileText, CheckCircle, ChevronRight, BarChart3, Clock, AlertCircle, AlertTriangle, Sparkles, X, PlayCircle, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+
+interface RoadmapResource {
+    title: string;
+    type: "Video" | "Article" | "Course";
+    url: string;
+}
 
 interface RoadmapStep {
     stepName: string;
     description: string;
+    estimated_time?: string;
+    resources?: RoadmapResource[];
 }
 
 interface AnalysisResult {
@@ -496,31 +505,75 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
-                                {/* Actionable Steps */}
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">Your Action Plan</h3>
-                                    <div className="relative space-y-6 pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
-                                        {(() => {
-                                            try {
-                                                const steps = typeof selectedRoadmap.actionable_steps === 'string'
-                                                    ? JSON.parse(selectedRoadmap.actionable_steps)
-                                                    : selectedRoadmap.actionable_steps;
+                                {/* Actionable Steps Timeline */}
+                                <div className="space-y-6">
+                                    <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">Your Interactive Curriculum</h3>
+                                    <div className="relative pl-2">
+                                        {/* Timeline Line */}
+                                        <div className="absolute left-2 top-2 bottom-4 w-0.5 bg-slate-800" />
 
-                                                return Array.isArray(steps) && steps.map((step: any, idx: number) => (
-                                                    <div key={idx} className="relative group">
-                                                        <div className="absolute -left-[25px] top-1.5 h-4 w-4 rounded-full bg-slate-900 border-2 border-indigo-500 group-hover:bg-indigo-500 transition-colors" />
-                                                        <h4 className="font-semibold text-white group-hover:text-indigo-400 transition-colors">
-                                                            {step.stepName || step.step}
-                                                        </h4>
-                                                        <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-                                                            {step.description || step.desc}
-                                                        </p>
-                                                    </div>
-                                                ));
-                                            } catch (e) {
-                                                return <span className="text-sm text-red-500">Error parsing roadmap steps.</span>;
-                                            }
-                                        })()}
+                                        <div className="space-y-8">
+                                            {(() => {
+                                                try {
+                                                    const steps = typeof selectedRoadmap.actionable_steps === 'string'
+                                                        ? JSON.parse(selectedRoadmap.actionable_steps)
+                                                        : selectedRoadmap.actionable_steps;
+
+                                                    return Array.isArray(steps) && steps.map((step: any, idx: number) => (
+                                                        <div key={idx} className="relative pl-8 group">
+                                                            {/* Timeline Node */}
+                                                            <div className="absolute left-[3px] top-1.5 h-3 w-3 rounded-full bg-slate-900 border-2 border-indigo-500 group-hover:bg-indigo-500 transition-colors z-10" />
+
+                                                            <div className="space-y-2">
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    <h4 className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">
+                                                                        {step.stepName || step.step}
+                                                                    </h4>
+                                                                    {step.estimated_time && (
+                                                                        <span className="inline-flex items-center rounded bg-slate-800 px-2 py-0.5 text-xs font-mono font-medium text-indigo-400 border border-slate-700">
+                                                                            <Clock className="w-3 h-3 mr-1" />
+                                                                            {step.estimated_time}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                <p className="text-sm text-slate-400 leading-relaxed max-w-xl">
+                                                                    {step.description || step.desc}
+                                                                </p>
+
+                                                                {/* Resources */}
+                                                                {step.resources && step.resources.length > 0 && (
+                                                                    <div className="pt-2 flex flex-wrap gap-2">
+                                                                        {step.resources.map((res: any, rIdx: number) => (
+                                                                            <Link
+                                                                                key={rIdx}
+                                                                                href={res.url}
+                                                                                target="_blank"
+                                                                                className={cn(
+                                                                                    "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:-translate-y-0.5",
+                                                                                    res.type === 'Video'
+                                                                                        ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20"
+                                                                                        : "bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
+                                                                                )}
+                                                                            >
+                                                                                {res.type === 'Video' ? (
+                                                                                    <PlayCircle className="w-3.5 h-3.5 mr-1.5" />
+                                                                                ) : (
+                                                                                    <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+                                                                                )}
+                                                                                {res.title}
+                                                                            </Link>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                } catch (e) {
+                                                    return <span className="text-sm text-red-500">Error parsing roadmap steps.</span>;
+                                                }
+                                            })()}
+                                        </div>
                                     </div>
                                 </div>
 

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
         let prompt = `
       Act as an elite technical recruiter.
@@ -43,8 +43,23 @@ export async function POST(req: Request) {
       {
         "matchPercentage": number (0-100),
         "missingSkills": string[] (array of critical missing skills),
-        "actionableRoadmap": [{ "stepName": string, "description": string }] (array of 3-5 concrete steps)
+        "actionableRoadmap": [
+          {
+            "stepName": string,
+            "description": string,
+            "estimated_time": string (e.g. "1-2 Weeks"),
+            "resources": [
+              { "title": string, "type": "Video" | "Article" | "Course", "url": string }
+            ]
+          }
+        ]
       }
+
+      CRITICAL INSTRUCTIONS FOR RESOURCES:
+      1. Provide 2 highly relevant, FREE resources per step.
+      2. For Videos: Use a generic YouTube search URL: "https://www.youtube.com/results?search_query=React+Hooks+Crash+Course". DO NOT hallucinate specific video IDs.
+      3. For Articles: Use official documentation URLs (react.dev, developer.mozilla.org) where possible.
+
       Do not include any markdown formatting or extra text, just the JSON string.
     `;
 
