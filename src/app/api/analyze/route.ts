@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         let prompt = `
       Act as an elite technical recruiter.
@@ -78,14 +78,23 @@ export async function POST(req: Request) {
         const response = await result.response;
         const text = response.text();
 
-        // Clean up markdown code blocks if present
-        const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
+        // Robust JSON Extraction
+        const startIndex = text.indexOf('{') !== -1 && text.indexOf('[') !== -1
+            ? Math.min(text.indexOf('{'), text.indexOf('['))
+            : Math.max(text.indexOf('{'), text.indexOf('['));
+        const endIndex = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'));
+
+        if (startIndex === -1 || endIndex === -1) {
+            throw new Error("No JSON object found in response");
+        }
+
+        const cleanText = text.substring(startIndex, endIndex + 1);
 
         try {
             const jsonResponse = JSON.parse(cleanText);
             return NextResponse.json(jsonResponse);
         } catch (e) {
-            console.error("Failed to parse AI response:", text);
+            console.error("Failed to parse AI response. Raw Text:", text);
             return NextResponse.json(
                 { error: "Failed to parse analysis results" },
                 { status: 500 }

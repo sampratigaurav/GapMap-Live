@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 
 // Initialize Gemini with Flash 1.5 for speed and lower cost/token usage
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function POST(req: NextRequest) {
     try {
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
             .slice(0, 2)
             .map((e: any) => ({
                 id: e.id,
-                name: e.name,
+                name: e.full_name,
                 role: e.designation,
                 skills: e.skills
             }));
@@ -58,14 +58,23 @@ export async function POST(req: NextRequest) {
         const result = await model.generateContent(prompt);
         const text = result.response.text();
 
-        // Bulletproof Cleaning
-        const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+        // Robust JSON Extraction
+        const startIndex = text.indexOf('{') !== -1 && text.indexOf('[') !== -1
+            ? Math.min(text.indexOf('{'), text.indexOf('['))
+            : Math.max(text.indexOf('{'), text.indexOf('['));
+        const endIndex = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'));
+
+        if (startIndex === -1 || endIndex === -1) {
+            throw new Error("No JSON object found in response");
+        }
+
+        const cleanText = text.substring(startIndex, endIndex + 1);
 
         try {
             const analysis = JSON.parse(cleanText);
             return NextResponse.json(analysis);
         } catch (parseError) {
-            console.error("JSON Parse Failed:", text);
+            console.error("JSON Parse Failed. Raw Text:", text);
             return NextResponse.json({ error: "AI response was not valid JSON. Please try again." }, { status: 500 });
         }
 

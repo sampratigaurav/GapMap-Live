@@ -360,7 +360,7 @@ function EmployeeTable() {
                     <tbody className="divide-y divide-slate-800/50">
                         {employees.map((emp) => (
                             <tr key={emp.id} className="hover:bg-slate-800/30 transition-colors">
-                                <td className="px-4 py-3 font-medium text-white">{emp.name}</td>
+                                <td className="px-4 py-3 font-medium text-white">{emp.full_name}</td>
                                 <td className="px-4 py-3">{emp.designation}</td>
                                 <td className="px-4 py-3 max-w-xs truncate" title={emp.skills}>{emp.skills}</td>
                                 <td className="px-4 py-3">${emp.salary?.toLocaleString()}</td>
