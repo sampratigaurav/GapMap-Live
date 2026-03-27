@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { BadgeCheck, BrainCircuit, ChevronRight, Lock, PlayCircle, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { BadgeCheck, BrainCircuit, Lock, PlayCircle, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,6 @@ interface AssessmentState {
 
 export default function VerifyPage() {
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
     const [claimedSkills, setClaimedSkills] = useState<string[]>([]);
     const [verifiedSkills, setVerifiedSkills] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,7 +45,6 @@ export default function VerifyPage() {
                 router.push("/recruiter");
                 return;
             }
-            setUser(user);
             fetchClaimedSkills(user.id);
         };
         checkUser();
@@ -59,6 +57,10 @@ export default function VerifyPage() {
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(1);
+
+        if (error) {
+            console.error("Error loading skills for verification:", error);
+        }
 
         if (data && data.length > 0) {
             const latestRoadmap = data[0];

@@ -2,31 +2,35 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
+type ContentPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
 export async function POST(req: Request) {
-    try {
-        const { currentSkills, targetRole, resumeContent, resumeType, linkedinUrl, githubUrl } = await req.json();
+  try {
+    const { currentSkills, targetRole, resumeContent, resumeType, linkedinUrl, githubUrl } = await req.json();
 
-        if (!currentSkills || !targetRole) {
-            return NextResponse.json(
-                { error: "Missing skills or target role" },
-                { status: 400 }
-            );
-        }
+    if (!currentSkills || !targetRole) {
+      return NextResponse.json(
+        { error: "Missing skills or target role" },
+        { status: 400 }
+      );
+    }
 
-        const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-        if (!apiKey) {
-            console.error("GEMINI_API_KEY is not set");
-            return NextResponse.json(
-                { error: "Server configuration error: API Key missing" },
-                { status: 500 }
-            );
-        }
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY is not set");
+      return NextResponse.json(
+        { error: "Server configuration error: API Key missing" },
+        { status: 500 }
+      );
+    }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        let prompt = `
+    const prompt = `
       Act as an elite technical recruiter.
       Analyze the candidate's fit for the [${targetRole}] role.
       
@@ -63,49 +67,50 @@ export async function POST(req: Request) {
       Do not include any markdown formatting or extra text, just the JSON string.
     `;
 
-        const parts: any[] = [{ text: prompt }];
+    const parts: ContentPart[] = [{ text: prompt }];
 
-        if (resumeContent) {
-            parts.push({
-                inlineData: {
-                    mimeType: resumeType || "application/pdf",
-                    data: resumeContent
-                }
-            });
+    if (resumeContent) {
+      parts.push({
+        inlineData: {
+          mimeType: resumeType || "application/pdf",
+          data: resumeContent
         }
-
-        const result = await model.generateContent(parts);
-        const response = await result.response;
-        const text = response.text();
-
-        // Robust JSON Extraction
-        const startIndex = text.indexOf('{') !== -1 && text.indexOf('[') !== -1
-            ? Math.min(text.indexOf('{'), text.indexOf('['))
-            : Math.max(text.indexOf('{'), text.indexOf('['));
-        const endIndex = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'));
-
-        if (startIndex === -1 || endIndex === -1) {
-            throw new Error("No JSON object found in response");
-        }
-
-        const cleanText = text.substring(startIndex, endIndex + 1);
-
-        try {
-            const jsonResponse = JSON.parse(cleanText);
-            return NextResponse.json(jsonResponse);
-        } catch (e) {
-            console.error("Failed to parse AI response. Raw Text:", text);
-            return NextResponse.json(
-                { error: "Failed to parse analysis results" },
-                { status: 500 }
-            );
-        }
-
-    } catch (error: any) {
-        console.error("Analysis Error:", error);
-        return NextResponse.json(
-            { error: error.message || "Internal Server Error" },
-            { status: 500 }
-        );
+      });
     }
+
+    const result = await model.generateContent(parts);
+    const response = await result.response;
+    const text = response.text();
+
+    // Robust JSON Extraction
+    const startIndex = text.indexOf('{') !== -1 && text.indexOf('[') !== -1
+      ? Math.min(text.indexOf('{'), text.indexOf('['))
+      : Math.max(text.indexOf('{'), text.indexOf('['));
+    const endIndex = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'));
+
+    if (startIndex === -1 || endIndex === -1) {
+      throw new Error("No JSON object found in response");
+    }
+
+    const cleanText = text.substring(startIndex, endIndex + 1);
+
+    try {
+      const jsonResponse = JSON.parse(cleanText);
+      return NextResponse.json(jsonResponse);
+    } catch (parseError) {
+      console.error("Failed to parse AI response. Raw Text:", text, parseError);
+      return NextResponse.json(
+        { error: "Failed to parse analysis results" },
+        { status: 500 }
+      );
+    }
+
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("Analysis Error:", error);
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
+  }
 }

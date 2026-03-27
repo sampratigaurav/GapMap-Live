@@ -2,28 +2,28 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-    try {
-        const { skill } = await req.json();
+  try {
+    const { skill } = await req.json();
 
-        if (!skill) {
-            return NextResponse.json(
-                { error: "Skill is required" },
-                { status: 400 }
-            );
-        }
+    if (!skill) {
+      return NextResponse.json(
+        { error: "Skill is required" },
+        { status: 400 }
+      );
+    }
 
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return NextResponse.json(
-                { error: "GEMINI_API_KEY is not configured" },
-                { status: 500 }
-            );
-        }
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "GEMINI_API_KEY is not configured" },
+        { status: 500 }
+      );
+    }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const prompt = `
+    const prompt = `
       You are a senior technical interviewer. 
       Generate a 3-question multiple-choice technical assessment for the skill: ${skill}. 
       The questions should test practical, intermediate-level knowledge. 
@@ -32,38 +32,39 @@ export async function POST(req: Request) {
       Do not use markdown code blocks like \`\`\`json in the output.
     `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
-        // Robust JSON Extraction
-        const startIndex = text.indexOf('{') !== -1 && text.indexOf('[') !== -1
-            ? Math.min(text.indexOf('{'), text.indexOf('['))
-            : Math.max(text.indexOf('{'), text.indexOf('['));
-        const endIndex = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'));
+    // Robust JSON Extraction
+    const startIndex = text.indexOf('{') !== -1 && text.indexOf('[') !== -1
+      ? Math.min(text.indexOf('{'), text.indexOf('['))
+      : Math.max(text.indexOf('{'), text.indexOf('['));
+    const endIndex = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'));
 
-        if (startIndex === -1 || endIndex === -1) {
-            throw new Error("No JSON object found in response");
-        }
-
-        const cleanText = text.substring(startIndex, endIndex + 1);
-
-        try {
-            const jsonResponse = JSON.parse(cleanText);
-            return NextResponse.json(jsonResponse);
-        } catch (e) {
-            console.error("Failed to parse AI assessment response. Raw Text:", text);
-            return NextResponse.json(
-                { error: "Failed to parse assessment results" },
-                { status: 500 }
-            );
-        }
-
-    } catch (error: any) {
-        console.error("Assessment Generation Error:", error);
-        return NextResponse.json(
-            { error: error.message || "Internal Server Error" },
-            { status: 500 }
-        );
+    if (startIndex === -1 || endIndex === -1) {
+      throw new Error("No JSON object found in response");
     }
+
+    const cleanText = text.substring(startIndex, endIndex + 1);
+
+    try {
+      const jsonResponse = JSON.parse(cleanText);
+      return NextResponse.json(jsonResponse);
+    } catch (parseError) {
+      console.error("Failed to parse AI assessment response. Raw Text:", text, parseError);
+      return NextResponse.json(
+        { error: "Failed to parse assessment results" },
+        { status: 500 }
+      );
+    }
+
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("Assessment Generation Error:", error);
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
+  }
 }
