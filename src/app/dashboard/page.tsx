@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Upload, FileText, CheckCircle, ChevronRight, BarChart3, Clock, AlertCircle, AlertTriangle, Sparkles, X, PlayCircle, BookOpen } from "lucide-react";
+import { Upload, CheckCircle, ChevronRight, BarChart3, Clock, AlertTriangle, Sparkles, X, PlayCircle, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
 
 interface RoadmapResource {
     title: string;
@@ -33,14 +34,17 @@ interface Roadmap {
     target_role: string;
     current_skills: string;
     match_percentage: number;
-    missing_skills: string[] | string; // Handle potential JSON string
-    actionable_steps: RoadmapStep[] | string; // Handle potential JSON string
+    missing_skills: string[] | string | null; // Handle potential JSON string
+    actionable_steps: RoadmapStep[] | string | null; // Handle potential JSON string
+    linkedin_url?: string | null;
+    github_url?: string | null;
+    verified_skills?: string[] | string | null;
     created_at: string;
 }
 
 export default function DashboardPage() {
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
     const [selectedRoadmap, setSelectedRoadmap] = useState<Roadmap | null>(null);
 
@@ -72,7 +76,7 @@ export default function DashboardPage() {
         if (error) {
             console.error("Error fetching roadmaps:", error);
         } else {
-            setRoadmaps(data || []);
+            setRoadmaps((data as Roadmap[]) || []);
         }
     };
 
@@ -498,10 +502,10 @@ export default function DashboardPage() {
                                                         {skill}
                                                     </span>
                                                 ));
-                                            } catch (e) {
-                                                return <span className="text-sm text-red-500">Error parsing skills data.</span>;
-                                            }
-                                        })()}
+                                                } catch {
+                                                    return <span className="text-sm text-red-500">Error parsing skills data.</span>;
+                                                }
+                                            })()}
                                     </div>
                                 </div>
 
@@ -515,11 +519,19 @@ export default function DashboardPage() {
                                         <div className="space-y-8">
                                             {(() => {
                                                 try {
+                                                    if (!selectedRoadmap.actionable_steps) {
+                                                        return <span className="text-sm text-slate-400">No roadmap steps available yet.</span>;
+                                                    }
+
                                                     const steps = typeof selectedRoadmap.actionable_steps === 'string'
-                                                        ? JSON.parse(selectedRoadmap.actionable_steps)
+                                                        ? (JSON.parse(selectedRoadmap.actionable_steps) as RoadmapStep[])
                                                         : selectedRoadmap.actionable_steps;
 
-                                                    return Array.isArray(steps) && steps.map((step: any, idx: number) => (
+                                                    if (!Array.isArray(steps)) {
+                                                        return <span className="text-sm text-red-500">Error parsing roadmap steps.</span>;
+                                                    }
+
+                                                    return steps.map((step: RoadmapStep, idx: number) => (
                                                         <div key={idx} className="relative pl-8 group">
                                                             {/* Timeline Node */}
                                                             <div className="absolute left-[3px] top-1.5 h-3 w-3 rounded-full bg-slate-900 border-2 border-indigo-500 group-hover:bg-indigo-500 transition-colors z-10" />
@@ -527,7 +539,7 @@ export default function DashboardPage() {
                                                             <div className="space-y-2">
                                                                 <div className="flex flex-wrap items-center gap-2">
                                                                     <h4 className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">
-                                                                        {step.stepName || step.step}
+                                                                        {step.stepName || (step as unknown as { step?: string }).step}
                                                                     </h4>
                                                                     {step.estimated_time && (
                                                                         <span className="inline-flex items-center rounded bg-slate-800 px-2 py-0.5 text-xs font-mono font-medium text-indigo-400 border border-slate-700">
@@ -538,13 +550,13 @@ export default function DashboardPage() {
                                                                 </div>
 
                                                                 <p className="text-sm text-slate-400 leading-relaxed max-w-xl">
-                                                                    {step.description || step.desc}
+                                                                    {step.description || (step as unknown as { desc?: string }).desc}
                                                                 </p>
 
                                                                 {/* Resources */}
                                                                 {step.resources && step.resources.length > 0 && (
                                                                     <div className="pt-2 flex flex-wrap gap-2">
-                                                                        {step.resources.map((res: any, rIdx: number) => (
+                                                                        {step.resources.map((res: RoadmapResource, rIdx: number) => (
                                                                             <Link
                                                                                 key={rIdx}
                                                                                 href={res.url}
@@ -569,7 +581,7 @@ export default function DashboardPage() {
                                                             </div>
                                                         </div>
                                                     ));
-                                                } catch (e) {
+                                                } catch {
                                                     return <span className="text-sm text-red-500">Error parsing roadmap steps.</span>;
                                                 }
                                             })()}

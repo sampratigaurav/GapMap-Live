@@ -1,0 +1,198 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Github, Chrome, ArrowRight } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+
+type AuthMode = "login" | "signup";
+
+interface AuthFormProps {
+  defaultMode?: AuthMode;
+}
+
+export function AuthForm({ defaultMode = "login" }: AuthFormProps) {
+  const router = useRouter();
+
+  const [isSignUp, setIsSignUp] = useState(defaultMode === "signup");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Form State
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+
+  const handleAuth = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (isSignUp) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              role: "candidate",
+              full_name: fullName,
+            },
+          },
+        });
+        if (signUpError) throw signUpError;
+        alert("Check your email for the confirmation link!");
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInError) throw signInError;
+
+        router.push("/");
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      className="w-full max-w-md space-y-8"
+    >
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+          {isSignUp ? "Join the Network." : "Verify Your Impact."}
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Join the network of verified professionals.
+        </p>
+      </div>
+
+      {/* Form */}
+      <div className="space-y-6">
+        <div className="space-y-4">
+          {/* Full Name - Only for Sign Up */}
+          <AnimatePresence mode="popLayout">
+            {isSignUp && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="relative overflow-hidden"
+              >
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="peer w-full border-b border-border bg-transparent py-2 text-foreground placeholder-transparent focus:border-primary focus:outline-none"
+                  id="fullname"
+                />
+                <label
+                  htmlFor="fullname"
+                  className="absolute left-0 -top-3.5 text-sm text-muted-foreground transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-placeholder-shown:text-muted-foreground peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-primary"
+                >
+                  Full Name
+                </label>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="relative">
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="peer w-full border-b border-border bg-transparent py-2 text-foreground placeholder-transparent focus:border-primary focus:outline-none"
+              id="email"
+            />
+            <label
+              htmlFor="email"
+              className="absolute left-0 -top-3.5 text-sm text-muted-foreground transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-placeholder-shown:text-muted-foreground peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-primary"
+            >
+              Email Address
+            </label>
+          </div>
+          <div className="relative">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="peer w-full border-b border-border bg-transparent py-2 text-foreground placeholder-transparent focus:border-primary focus:outline-none"
+              id="password"
+            />
+            <label
+              htmlFor="password"
+              className="absolute left-0 -top-3.5 text-sm text-muted-foreground transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-placeholder-shown:text-muted-foreground peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-primary"
+            >
+              Password
+            </label>
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-500 font-medium text-center">
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleAuth}
+          disabled={isLoading}
+          className="flex w-full items-center justify-center rounded-lg bg-primary py-3 font-medium text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+        >
+          {isLoading
+            ? "Processing..."
+            : isSignUp
+              ? "Create Account"
+              : "Sign In to Qualify"}
+          {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+        </button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button className="flex items-center justify-center rounded-lg border border-border bg-card py-2.5 transition-colors hover:bg-secondary">
+            <Github className="h-5 w-5 mr-2" />
+            <span className="text-sm font-medium">GitHub</span>
+          </button>
+          <button className="flex items-center justify-center rounded-lg border border-border bg-card py-2.5 transition-colors hover:bg-secondary">
+            <Chrome className="h-5 w-5 mr-2" />
+            <span className="text-sm font-medium">Google</span>
+          </button>
+        </div>
+      </div>
+
+      <p className="text-center text-sm text-muted-foreground">
+        {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+        <button
+          type="button"
+          onClick={() => setIsSignUp(!isSignUp)}
+          className="font-semibold text-foreground hover:underline"
+        >
+          {isSignUp ? "Sign in" : "Sign up"}
+        </button>
+      </p>
+    </motion.div>
+  );
+}

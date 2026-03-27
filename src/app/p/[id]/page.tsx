@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
-import { BadgeCheck, BrainCircuit, ExternalLink, MapPin, Share2, Shield, User } from "lucide-react";
+import { BadgeCheck, BrainCircuit, ExternalLink, MapPin, Shield, User } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 interface PublicProfile {
     target_role: string;
@@ -34,6 +33,9 @@ export default function PublicPortfolioPage() {
                     verified_skills: data[0].verified_skills || []
                 });
             }
+            if (error) {
+                console.error("Error fetching public profile:", error);
+            }
             setLoading(false);
         };
         fetchProfile();
@@ -54,7 +56,7 @@ export default function PublicPortfolioPage() {
                     <User className="h-8 w-8 text-slate-500" />
                 </div>
                 <h1 className="text-xl font-bold text-white mb-2">Profile Not Found</h1>
-                <p className="text-slate-400 mb-6">This user hasn't created a public portfolio yet.</p>
+                <p className="text-slate-400 mb-6">This user hasn&apos;t created a public portfolio yet.</p>
                 <Link
                     href="/"
                     className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500"
