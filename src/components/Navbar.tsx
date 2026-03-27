@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, ChevronRight, BarChart3, Users, LayoutDashboard, LogOut, CheckCircle, BrainCircuit, User, Database, ShieldCheck } from "lucide-react";
+import { Menu, X, LayoutDashboard, LogOut, BrainCircuit, User, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -13,21 +13,18 @@ export function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
     const [user, setUser] = useState<any>(null);
-    const [role, setRole] = useState<string | null>(null);
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);
-            setRole(user?.user_metadata?.role || null);
         };
 
         checkUser();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user || null);
-            setRole(session?.user?.user_metadata?.role || null);
         });
 
         return () => subscription.unsubscribe();
@@ -40,13 +37,8 @@ export function Navbar() {
     };
 
     const routes = [
-        ...(role === 'Candidate' ? [
-            { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-            { href: "/verify", label: "Verify Skills", icon: ShieldCheck },
-        ] : []),
-        ...(role === 'Enterprise' ? [
-            { href: "/recruiter", label: "Talent Search", icon: Database },
-        ] : []),
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/verify", label: "Verify Skills", icon: ShieldCheck },
     ];
 
     if (pathname === '/login' || pathname === '/signup') return null;

@@ -1,20 +1,15 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Github, Chrome, ArrowRight, CheckCircle2 } from "lucide-react"; // Chrome as Google placeholder
-import { cn } from "@/lib/utils";
-import Link from "next/link"; // Added missing import
+import { Github, Chrome, ArrowRight } from "lucide-react"; // Chrome as Google placeholder
 import { supabase } from "@/lib/supabase";
 
 
 function LoginForm() {
-    const searchParams = useSearchParams();
     const router = useRouter();
-    const initialRole = searchParams.get("role") === "enterprise" ? "enterprise" : "candidate";
 
-    const [role, setRole] = useState<"candidate" | "enterprise">(initialRole);
     const [isSignUp, setIsSignUp] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -23,14 +18,6 @@ function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [fullName, setFullName] = useState("");
-    const [companyName, setCompanyName] = useState("");
-
-    // Sync state with URL param if it changes (optional, but good for UX)
-    useEffect(() => {
-        const roleParam = searchParams.get("role");
-        if (roleParam === "enterprise") setRole("enterprise");
-        else if (roleParam === "candidate") setRole("candidate");
-    }, [searchParams]);
 
     const handleAuth = async () => {
         setIsLoading(true);
@@ -43,9 +30,8 @@ function LoginForm() {
                     password,
                     options: {
                         data: {
-                            role,
+                            role: "candidate",
                             full_name: fullName,
-                            company_name: role === "enterprise" ? companyName : null,
                         },
                     },
                 });
@@ -79,46 +65,11 @@ function LoginForm() {
             {/* Header */}
             <div className="text-center">
                 <h2 className="text-3xl font-bold tracking-tight text-foreground">
-                    {isSignUp
-                        ? (role === "candidate" ? "Join the Network." : "Start Hiring.")
-                        : (role === "candidate" ? "Verify Your Impact." : "Find Proven Talent.")}
+                    {isSignUp ? "Join the Network." : "Verify Your Impact."}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    {role === "candidate"
-                        ? "Join the network of verified professionals."
-                        : "Access the database of qualified candidates."}
+                    Join the network of verified professionals.
                 </p>
-            </div>
-
-            {/* Role Toggle */}
-            <div className="space-y-3">
-                <p className="text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    I am a
-                </p>
-                <div className="flex rounded-full bg-secondary p-1">
-                    <button
-                        onClick={() => setRole("candidate")}
-                        className={cn(
-                            "flex-1 rounded-full py-2 text-sm font-medium transition-all",
-                            role === "candidate"
-                                ? "bg-background text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        Candidate
-                    </button>
-                    <button
-                        onClick={() => setRole("enterprise")}
-                        className={cn(
-                            "flex-1 rounded-full py-2 text-sm font-medium transition-all",
-                            role === "enterprise"
-                                ? "bg-background text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        Enterprise
-                    </button>
-                </div>
             </div>
 
             {/* Form */}
@@ -146,33 +97,6 @@ function LoginForm() {
                                     className="absolute left-0 -top-3.5 text-sm text-muted-foreground transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-placeholder-shown:text-muted-foreground peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-primary"
                                 >
                                     Full Name
-                                </label>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Company Name - Enterprise Only (Sign Up or Login if needed, usually just Sign Up but kept for both based on previous requirement, strictly bound to Sign Up makes more sense but abiding by 'dynamic' request) */}
-                    <AnimatePresence mode="popLayout">
-                        {role === "enterprise" && isSignUp && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="relative overflow-hidden"
-                            >
-                                <input
-                                    type="text"
-                                    placeholder="Company Name"
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.target.value)}
-                                    className="peer w-full border-b border-border bg-transparent py-2 text-foreground placeholder-transparent focus:border-primary focus:outline-none"
-                                    id="company"
-                                />
-                                <label
-                                    htmlFor="company"
-                                    className="absolute left-0 -top-3.5 text-sm text-muted-foreground transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-placeholder-shown:text-muted-foreground peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-primary"
-                                >
-                                    Company Name
                                 </label>
                             </motion.div>
                         )}
@@ -223,7 +147,7 @@ function LoginForm() {
                     disabled={isLoading}
                     className="flex w-full items-center justify-center rounded-lg bg-primary py-3 font-medium text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                 >
-                    {isLoading ? "Processing..." : (isSignUp ? "Create Account" : (role === "candidate" ? "Sign In to Qualify" : "Access Dashboard"))}
+                    {isLoading ? "Processing..." : (isSignUp ? "Create Account" : "Sign In to Qualify")}
                     {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                 </button>
 

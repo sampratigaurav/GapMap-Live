@@ -2,37 +2,22 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Target, ShieldCheck, Zap, Search, BarChart3, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, Target, ShieldCheck, Zap, BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function Home() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<'Enterprise' | 'Candidate' | 'Guest' | null>(null);
+  const [userRole, setUserRole] = useState<'candidate' | 'guest' | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-
-        if (user) {
-          console.log("LANDING PAGE CHECK: User Found", user.id);
-          // Safe Role Extraction with Fallback
-          const rawRole = user.user_metadata?.role || 'Candidate';
-          const role = rawRole === 'Enterprise' ? 'Enterprise' : 'Candidate'; // Normalize
-
-          console.log("LANDING PAGE CHECK: Assigned Role", role);
-          setUserRole(role);
-        } else {
-          console.log("LANDING PAGE CHECK: No User (Guest)");
-          setUserRole('Guest');
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        setUserRole(user ? 'candidate' : 'guest');
       } catch (err) {
         console.error("LANDING PAGE AUTH ERROR:", err);
-        setUserRole('Guest'); // Fallback to guest on error
+        setUserRole('guest');
       } finally {
         setLoading(false);
       }
@@ -49,55 +34,8 @@ export default function Home() {
     );
   }
 
-  // Enterprise Portal
-  if (userRole === 'Enterprise') {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-white p-4">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('/grid.svg')] opacity-10 pointer-events-none"></div>
-        <div className="absolute top-20 right-20 h-64 w-64 rounded-full bg-indigo-500/10 blur-[80px]" />
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl text-center space-y-8 relative z-10"
-        >
-          <div className="inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-sm font-medium text-indigo-300">
-            <Users className="mr-2 h-4 w-4" />
-            Enterprise Account
-          </div>
-
-          <h1 className="text-5xl font-bold tracking-tight text-white md:text-6xl">
-            Welcome to your <span className="text-indigo-400">Talent Hub.</span>
-          </h1>
-
-          <p className="text-xl text-slate-400">
-            Discover verified upskillers or analyze your internal workforce.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-            <Link
-              href="/recruiter"
-              className="group flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-8 py-4 text-lg font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20"
-            >
-              <Search className="h-5 w-5" />
-              Talent Discovery
-            </Link>
-
-            <Link
-              href="/recruiter/feasibility"
-              className="group flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/50 px-8 py-4 text-lg font-medium text-slate-300 transition-all hover:bg-slate-800 hover:text-white"
-            >
-              <BarChart3 className="h-5 w-5" />
-              Feasibility Engine
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   // Candidate Portal
-  if (userRole === 'Candidate') {
+  if (userRole === 'candidate') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-white p-4">
         <div className="absolute top-0 left-0 w-full h-full bg-[url('/grid.svg')] opacity-10 pointer-events-none"></div>
@@ -155,7 +93,7 @@ export default function Home() {
           >
             <div className="inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-sm font-medium text-indigo-300 backdrop-blur-sm">
               <span className="flex h-2 w-2 rounded-full bg-indigo-400 mr-2 animate-pulse"></span>
-              The Future of Technical Hiring
+              AI-Powered Career Development
             </div>
 
             <h1 className="text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl">
@@ -166,23 +104,16 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg text-slate-400 md:text-xl">
-              The AI-driven talent engine that maps candidate skills, bridges the gaps, and connects verified engineers with top-tier organizations.
+              The AI-driven platform that maps your skills, bridges the gaps, and builds your verified career portfolio.
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
-                href="/login?role=candidate"
+                href="/login"
                 className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-blue-600 to-emerald-600 px-8 py-4 text-lg font-bold text-white transition-all hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(59,130,246,0.5)]"
               >
-                I&apos;m a Candidate
+                Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-
-              <Link
-                href="/login?role=enterprise"
-                className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/50 px-8 py-4 text-lg font-medium text-slate-300 transition-all hover:bg-slate-800 hover:text-white backdrop-blur-sm"
-              >
-                I&apos;m Hiring
               </Link>
             </div>
           </motion.div>
@@ -192,7 +123,7 @@ export default function Home() {
         <section className="container mx-auto px-4 py-20">
           <div className="grid gap-12 lg:grid-cols-2">
 
-            {/* For Talent */}
+            {/* AI Skill Gap Analysis */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -221,7 +152,7 @@ export default function Home() {
               </ul>
             </motion.div>
 
-            {/* For Enterprise */}
+            {/* Skill Verification */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -235,13 +166,13 @@ export default function Home() {
                 <ShieldCheck className="h-6 w-6" />
               </div>
 
-              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">Verified Talent Discovery</h3>
+              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">Verified Skill Badges</h3>
               <p className="mb-8 text-lg text-slate-400 leading-relaxed">
-                No more resume spam. Search a database of highly motivated candidates who are actively upskilling for your exact technical requirements.
+                Prove your skills, don&apos;t just list them. Pass AI-generated assessments to earn verified badges that appear on your public portfolio and stand out to employers.
               </p>
 
               <ul className="space-y-3">
-                {["Filter by verified skill gaps", "Target specific roles & tech stacks", "Connect with motivated learners"].map((item, i) => (
+                {["AI-generated assessments per skill", "Earn verified badges instantly", "Share your public portfolio link"].map((item, i) => (
                   <li key={i} className="flex items-center text-slate-300">
                     <CheckIcon className="mr-3 h-5 w-5 text-emerald-500" />
                     {item}
@@ -269,7 +200,7 @@ export default function Home() {
               {[
                 { icon: BarChart3, title: "1. Analyze Skills", desc: "Our AI scans your profile against market data." },
                 { icon: Zap, title: "2. Bridge the Gap", desc: "Follow a custom roadmap to master missing skills." },
-                { icon: Users, title: "3. Get Recruited", desc: "Showcase your growth to top hiring managers." }
+                { icon: ShieldCheck, title: "3. Get Verified", desc: "Pass skill assessments and build your verified portfolio." }
               ].map((step, idx) => (
                 <motion.div
                   key={idx}
