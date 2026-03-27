@@ -79,7 +79,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {isCandidate && (
+              {isCandidate && user && (
                 <div className="pt-6 border-t border-slate-800">
                   <h3 className="text-lg font-medium text-white mb-4">Public Portfolio</h3>
                   <p className="text-slate-400 text-sm mb-4">
